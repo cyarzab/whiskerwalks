@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Whisker Walks</title>
+<meta name="description" content="A playful diary of the cats you meet on your walks." />
+
+<!-- iOS home-screen behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Whisker Walks" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2C3E66" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header class="app-header" id="appHeader">
+    <div class="header-glow"></div>
+    <div class="header-top-row">
+      <div>
+        <h1 class="wordmark"><span class="paw-emoji">🐾</span>Whisker Walks</h1>
+        <p class="tagline">a playful log of every cat you meet</p>
+      </div>
+      <div class="view-tabs" id="viewTabs">
+        <button type="button" class="view-tab active" id="tabDiary" data-view="diary">📔 Diary</button>
+        <button type="button" class="view-tab" id="tabMap" data-view="map">🗺️ Map</button>
+      </div>
+    </div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat">
+        <span class="stat-num" id="statWalks">0</span>
+        <span class="stat-label">walks</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statCats">0</span>
+        <span class="stat-label">cats met</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statStreak">0</span>
+        <span class="stat-label">day streak</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Feed: big photo cards, one per screen -->
+  <main class="feed" id="feed">
+    <!-- entries render here -->
+  </main>
+
+  <!-- Map view -->
+  <div class="map-view" id="mapView" hidden>
+    <div id="mapCanvas"></div>
+    <div class="map-empty" id="mapEmpty" hidden>
+      <div class="empty-paw">🗺️</div>
+      <p>No sightings with a location yet.</p>
+      <p class="empty-sub">Tap 📍 in the log form to pin where you saw a cat.</p>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState" hidden>
+    <div class="empty-paw">🐾</div>
+    <p>No sightings yet.</p>
+    <p class="empty-sub">Tap the button below after your walk.</p>
+  </div>
+
+  <!-- Floating add button -->
+  <button class="fab" id="openForm" aria-label="Log a cat sighting">
+    <span class="fab-plus">+</span>
+  </button>
+
+  <!-- Offline banner -->
+  <div class="offline-banner" id="offlineBanner" hidden>You're offline — entries save on this phone and stay put.</div>
+
+</div>
+
+<!-- Entry form (sheet) -->
+<div class="sheet-backdrop" id="sheetBackdrop" hidden>
+  <form class="sheet" id="entryForm">
+    <div class="sheet-handle"></div>
+    <h2 class="sheet-title">New sighting</h2>
+
+    <label class="field">
+      <span class="field-label">Photo</span>
+      <div class="photo-input" id="photoInput">
+        <img id="photoPreview" alt="" hidden />
+        <div class="photo-placeholder" id="photoPlaceholder">
+          <span>📷</span>
+          <span>Tap to add a photo</span>
+        </div>
+      </div>
+      <input type="file" id="photoFile" accept="image/*" capture="environment" hidden />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Cat's name (or leave blank for a silly one)</span>
+      <div class="name-row">
+        <input type="text" id="catName" placeholder="e.g. Mr. Whiskers, the tabby by the mailbox" maxlength="60" />
+        <button type="button" class="silly-btn" id="sillyNameBtn" title="Give me a silly name">🎲</button>
+      </div>
+    </label>
+
+    <div class="field">
+      <span class="field-label">How friendly were they?</span>
+      <div class="rating-picker" id="ratingPicker">
+        <button type="button" class="rating-paw" data-value="1">🐾</button>
+        <button type="button" class="rating-paw" data-value="2">🐾</button>
+        <button type="button" class="rating-paw" data-value="3">🐾</button>
+        <button type="button" class="rating-paw" data-value="4">🐾</button>
+        <button type="button" class="rating-paw" data-value="5">🐾</button>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Where</span>
+      <div class="location-row">
+        <input type="text" id="location" placeholder="e.g. Elm Street, near the bakery" maxlength="100" />
+        <button type="button" class="loc-btn" id="useLocation" title="Use current location">📍</button>
+      </div>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Notes</span>
+      <textarea id="notes" placeholder="Friendly? Shy? What were they up to?" rows="3" maxlength="500"></textarea>
+    </label>
+
+    <div class="sheet-actions">
+      <button type="button" class="btn-secondary" id="cancelForm">Cancel</button>
+      <button type="submit" class="btn-primary">Save sighting</button>
+    </div>
+  </form>
+</div>
+
+<!-- Entry detail viewer -->
+<div class="sheet-backdrop" id="detailBackdrop" hidden>
+  <div class="sheet detail-sheet" id="detailSheet">
+    <div class="sheet-handle"></div>
+    <img class="detail-photo" id="detailPhoto" alt="" />
+    <h2 class="detail-name" id="detailName"></h2>
+    <div class="detail-rating" id="detailRating"></div>
+    <p class="detail-meta" id="detailMeta"></p>
+    <p class="detail-notes" id="detailNotes"></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn-danger" id="deleteEntry">Delete</button>
+      <button type="button" class="btn-primary" id="closeDetail">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
